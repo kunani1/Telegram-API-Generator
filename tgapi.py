@@ -123,7 +123,7 @@ class TelegramApplication:
                 return False
 
 # Replace "YOUR_BOT_TOKEN" with the token you obtained from the BotFather on Telegram.
-bot_token = "YOUR_BOT_TOKEN"
+bot_token = "1799299844:AAHXWUfImCIP3FRC6DDYB_41xCjAOkZHo-k"
 telegram_app = TelegramApplication(bot_token)
 
 # Define a command handler for the /start command.
