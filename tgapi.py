@@ -2,36 +2,24 @@ import json
 import requests
 from lxml import html
 from fake_useragent import FakeUserAgent
+from telegram import Update, ParseMode
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
 
 fake_useragent = FakeUserAgent()
 
 class TelegramApplication:
-    def __init__(self,
-            phone_number: str,
-            app_title: str = "",
-            app_shortname: str = "",
-            app_url: str = "",
-            app_platform: str = "desktop",
-            app_desc: str = "",
-            random_hash: str = None,
-            stel_token: str = None,
-            useragent: str = fake_useragent.random
-        ) -> None:
-        self.phone_number = phone_number
-        self.app_title = app_title
-        self.app_shortname = app_shortname
-        self.app_url = app_url
+    def __init__(self, bot_token: str, app_platform: str = "desktop"):
+        self.bot_token = bot_token
         self.app_platform = app_platform
-        self.app_desc = app_desc
-        self.random_hash = random_hash
-        self.stel_token = stel_token
-        self.useragent = useragent
+        self.random_hash = None
+        self.stel_token = None
+        self.useragent = fake_useragent.random
     
-    def send_password(self) -> bool:
+    def send_password(self, phone_number: str) -> bool:
         try:
             response = requests.post(
                 url="https://my.telegram.org/auth/send_password",
-                data="phone={0}".format(self.phone_number),
+                data="phone={0}".format(phone_number),
                 headers={
                     "Origin": "https://my.telegram.org",
                     "Accept-Encoding": "gzip, deflate, br",
@@ -51,11 +39,11 @@ class TelegramApplication:
         except:
             return False
 
-    def auth_login(self, cloud_password: str) -> bool:
+    def auth_login(self, phone_number: str, cloud_password: str) -> bool:
         try:
             responses = requests.post(
                 url="https://my.telegram.org/auth/login",
-                data="phone={0}&random_hash={1}&password={2}".format(self.phone_number, self.random_hash, cloud_password),
+                data="phone={0}&random_hash={1}&password={2}".format(phone_number, self.random_hash, cloud_password),
                 headers={
                     "Origin": "https://my.telegram.org",
                     "Accept-Encoding": "gzip, deflate, br",
@@ -111,10 +99,9 @@ class TelegramApplication:
                         "Referer": "https://my.telegram.org/apps",
                         "X-Requested-With": "XMLHttpRequest",
                         "Connection": "keep-alive",
-                        "Dnt":"1"
+                        "Dnt": "1"
                     }
                 )
-                
                 
                 response = requests.get(
                     url="https://my.telegram.org/apps",
@@ -126,7 +113,7 @@ class TelegramApplication:
                         "User-Agent": self.useragent,
                         "Reffer": "https://my.telegram.org/org",
                         "Cache-Control": "max-age=0",
-                        "Dnt":"1"
+                        "Dnt": "1"
                     }
                 )
                 trees = html.fromstring(response.content)
@@ -134,3 +121,30 @@ class TelegramApplication:
                 return api[0], api[1]
             except:
                 return False
+
+# Replace "YOUR_BOT_TOKEN" with the token you obtained from the BotFather on Telegram.
+bot_token = "YOUR_BOT_TOKEN"
+telegram_app = TelegramApplication(bot_token)
+
+# Define a command handler for the /start command.
+def start(update: Update, context: CallbackContext):
+    user = update.effective_user
+    update.message.reply_markdown_v2(
+        fr"Hi {user.mention_markdown_v2()}! I am your Telegram Application bot. "
+        fr"Please use the /sendpassword and /authlogin commands to interact with the Telegram application."
+    )
+
+# Define a command handler for the /sendpassword command.
+def send_password(update: Update, context: CallbackContext):
+    user_phone = update.message.text.split()[1]
+    if telegram_app.send_password(user_phone):
+        update.message.reply_text("Password sent successfully! Use /authlogin command to authenticate.")
+    else:
+        update.message.reply_text("Failed to send the password. Please try again.")
+
+# Define a command handler for the /authlogin command.
+def auth_login(update: Update, context: CallbackContext):
+    args = update.message.text.split()
+    if len(args) != 3:
+        update.message.reply_text("Invalid usage. Please use /authlogin <phone_number
+            
